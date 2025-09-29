@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title id="site-title">پخش استقلال</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <style>
+    body { font-family: 'Vazirmatn', sans-serif; background-color: #f8f9fa; }
+    .product-card {
+      transition: all 0.3s ease;
+      border-radius: 12px;
+      background: white;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    .out-of-stock-badge, .amazing-badge, .bestseller-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .amazing-badge { background: #dc2626; }
+    .bestseller-badge { background: #16a34a; }
+    input[type="range"] { direction: ltr; width: 100%; }
+    .admin-panel { display: none; }
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .theme-blue { --primary: #2563eb; }
+    .theme-red { --primary: #dc2626; }
+    .theme-green { --primary: #16a34a; }
+    .theme-orange { --primary: #f97316; }
+    .theme-purple { --primary: #9333ea; }
+    .theme-gray { --primary: #1e293b; }
+    .btn-primary {
+      background-color: var(--primary);
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    /* سبد خرید */
+    #cart-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 380px;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      overflow-y: auto;
+    }
+    #cart-panel.open {
+      right: 0;
+    }
+    #cart-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    #cart-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    /* دکمه بالا برو */
+    #scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+    #scroll-to-top.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .banner {
+      background: linear-gradient(135deg, var(--primary), var(--primary));
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    /* استوری موشن */
+    .motion-story-container {
+      height: 200px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .motion-story-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .motion-story-overlay {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px 0 0 0;
+      font-size: 0.85rem;
+      margin: 12px;
+    }
+    /* ایموجی متحرک دورانی */
+    .rotating-emoji {
+      font-size: 3rem;
+      animation: rotate 8s linear infinite;
+      display: block;
+      margin: 10px auto;
+    }
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    /* تم‌های پیشنهادی */
+    .theme-preview {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .theme-color {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #ddd;
+    }
+    .theme-color.active {
+      border-color: #333;
+      transform: scale(1.1);
+    }
+    .animated-emoji {
+      display: inline-block;
+      margin-left: 6px;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--primary, #2563eb)'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="theme-blue">
+
+  <!-- هدر ثابت -->
+  <header id="sticky-header" class="bg-white">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <h1 id="header-title" class="text-2xl font-bold text-primary">پخش استقلال</h1>
+      <div class="flex items-center gap-4">
+        <button onclick="openCart()" class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span id="cart-count" class="absolute -top-2 -left-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+        </button>
+        <button onclick="openAdminPanel()" class="text-sm bg-gray-800 text-white px-3 py-1 rounded">پنل مدیریت</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- استوری موشن -->
+  <div class="container mx-auto px-4">
+    <div class="motion-story-container">
+      <img id="motion-story" src="https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="استوری موشن">
+      <div class="motion-story-overlay">تایید شده ✅</div>
+    </div>
+  </div>
+
+  <!-- بنرهای تبلیغاتی -->
+  <div class="container mx-auto px-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="banner" id="banner1"></div>
+      <div class="banner" id="banner2"></div>
+      <div class="banner" id="banner3"></div>
+    </div>
+    <p class="text-center text-sm text-gray-600 mt-2 animate__animated animate__fadeIn">
+      <span class="animated-emoji animate__animated animate__pulse">📦</span>
+      در غیر از مکان شما در آذربایجان غربی. کرایه ماشین از شما دریافت می‌گردد.
+    </p>
+  </div>
+
+  <!-- جستجو و فیلتر -->
+  <div class="container mx-auto px-4 mb-6">
+    <div class="flex flex-col md:flex-row gap-4 mb-4">
+      <input type="text" id="search" placeholder="جستجوی محصول..." class="flex-1 border p-2 rounded text-sm" oninput="filterProducts()">
+      <select id="category-filter" class="border p-2 rounded text-sm w-full md:w-48" onchange="filterProducts()">
+        <option value="">همه دسته‌ها</option>
+        <option value="اسنک">اسنک</option>
+        <option value="روکو">روکو</option>
+        <option value="ویفر">ویفر</option>
+        <option value="تخمه">تخمه</option>
+        <option value="سایر">سایر</option>
+      </select>
+    </div>
+    <div class="w-full">
+      <label class="block text-sm mb-1">فیلتر قیمت (تومان)</label>
+      <div class="flex items-center gap-2">
+        <span id="min-price">0</span>
+        <input type="range" id="price-range" min="0" max="100000" step="1000" value="100000" oninput="filterProducts()">
+        <span id="max-price">100,000</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- دکمه جوایز -->
+  <div class="container mx-auto px-4 mb-6 text-center">
+    <button disabled title="در آینده فعال خواهد شد: با خرید محصولات، امتیاز جمع‌آوری کنید و جوایز دریافت کنید!" 
+            class="bg-gray-300 text-gray-600 px-4 py-2 rounded-full text-sm cursor-not-allowed animate__animated animate__fadeIn">
+      <span class="animated-emoji animate__animated animate__bounce">🎁</span>
+      جوایز
+    </button>
+    <div class="rotating-emoji">🌟</div>
+  </div>
+
+  <!-- بخش‌های ویژه -->
+  <div class="container mx-auto px-4 mb-8">
+    <div id="amazing-section" class="hidden">
+      <h2 id="amazing-title" class="text-xl font-bold mb-3"></h2>
+      <div id="amazing-products" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8"></div>
+    </div>
+
+    <div id="bestsellers-section" class="hidden">
+      <h2 id="bestsellers-title" class="text-xl font-bold mb-3"></h2>
+      <div id="bestsellers" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8"></div>
+    </div>
+  </div>
+
+  <!-- همه محصولات -->
+  <div class="container mx-auto px-4 pb-10">
+    <h2 id="all-products-title" class="text-xl font-bold text-gray-800 mb-4"></h2>
+    <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5"></div>
+  </div>
+
+  <!-- فوتر -->
+  <footer class="bg-gray-800 text-white text-center py-4 mt-10">
+    <div id="social-links" class="mb-2"></div>
+    <p>© 1404 پخش استقلال</p>
+  </footer>
+
+  <!-- دکمه بالا برو -->
+  <div id="scroll-to-top" onclick="scrollToTop()">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+    </svg>
+  </div>
+
+  <!-- سبد خرید -->
+  <div id="cart-overlay" onclick="closeCart()"></div>
+  <div id="cart-panel">
+    <div class="p-4 border-b flex justify-between items-center">
+      <h2 class="text-lg font-bold">سبد خرید</h2>
+      <button onclick="closeCart()" class="text-gray-500 hover:text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="cart-items" class="p-4"></div>
+    <div class="p-4 border-t">
+      <div class="flex justify-between text-lg font-bold mb-4">
+        <span>جمع کل:</span>
+        <span id="cart-total">0 تومان</span>
+      </div>
+      <button onclick="proceedToCheckout()" class="w-full bg-primary text-white py-2 rounded btn-primary hover:bg-opacity-90">
+        ادامه فرآیند خرید
+      </button>
+    </div>
+  </div>
+
+  <!-- پنل مدیریت -->
+  <div id="admin-panel" class="admin-panel fixed inset-0 bg-white z-50 p-6 overflow-auto">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">پنل مدیریت — تنظیمات کلی</h2>
+        <button onclick="closeAdminPanel()" class="bg-gray-200 px-3 py-1 rounded">بستن</button>
+      </div>
+
+      <div class="mb-6 p-4 border rounded bg-gray-50">
+        <h3 class="font-bold mb-3">اطلاعات تماس</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+          <input type="text" id="company-name" placeholder="نام شرکت" class="border p-2">
+          <input type="text" id="ceo-name" placeholder="نام مدیر عامل" class="border p-2">
+          <input type="text" id="phone-number" placeholder="شماره تماس اصلی" class="border p-2">
+          <input type="text" id="phone-number2" placeholder="شماره تماس ثابت دوم" class="border p-2">
+        </div>
+
+        <h4 class="font-bold mt-4 mb-2">لینک‌های مهم</h4>
+        <div class="grid grid-cols-1 gap-3">
+          <input type="text" id="order-link" placeholder="لینک سفارش (واتساپ یا سایر)" class="border p-2">
+          <input type="text" id="contact-link" placeholder="لینک ارتباطی (تلگرام/اینستاگرام)" class="border p-2">
+        </div>
+
+        <h4 class="font-bold mt-4 mb-2">استوری موشن</h4>
+        <div class="flex items-center gap-3 mb-4">
+          <input type="file" accept="image/*" id="story-upload" onchange="uploadStoryImage(event)" class="text-sm">
+          <img id="story-preview" src="" alt="پیش‌نمایش" class="w-16 h-16 object-cover rounded border" style="display:none;">
+        </div>
+
+        <h4 class="font-bold mt-4 mb-2">ظاهر سایت</h4>
+        <select id="theme-select" class="border p-2 w-full mb-2" onchange="previewTheme(this.value)">
+          <option value="blue">آبی</option>
+          <option value="red">قرمز</option>
+          <option value="green">سبز</option>
+          <option value="orange">نارنجی</option>
+          <option value="purple">بنفش</option>
+          <option value="gray">مشکی</option>
+        </select>
+        <div class="theme-preview">
+          <div class="theme-color" style="background:#2563eb" onclick="setTheme('blue')" title="آبی"></div>
+          <div class="theme-color" style="background:#dc2626" onclick="setTheme('red')" title="قرمز"></div>
+          <div class="theme-color" style="background:#16a34a" onclick="setTheme('green')" title="سبز"></div>
+          <div class="theme-color" style="background:#f97316" onclick="setTheme('orange')" title="نارنجی"></div>
+          <div class="theme-color" style="background:#9333ea" onclick="setTheme('purple')" title="بنفش"></div>
+          <div class="theme-color" style="background:#1e293b" onclick="setTheme('gray')" title="مشکی"></div>
+        </div>
+
+        <button onclick="saveGeneralSettings()" class="mt-3 bg-primary text-white px-4 py-2 rounded btn-primary">ذخیره تنظیمات</button>
+      </div>
+
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold">مدیریت محصولات</h3>
+          <button onclick="addNewProduct()" class="bg-green-600 text-white px-3 py-1 rounded text-sm">افزودن محصول جدید</button>
+        </div>
+        <div id="admin-products" class="space-y-3 max-h-96 overflow-y-auto p-2 border rounded"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === تابع ایموجی هوشمند ===
+    function getEmojiForText(text) {
+      const lower = text.toLowerCase();
+      if (lower.includes("ارسال") || lower.includes("ماشین")) return "🚚";
+      if (lower.includes("نمایندگی") || lower.includes("رسمی")) return "🏅";
+      if (lower.includes("کیفیت") || lower.includes("قیمت")) return "💯";
+      if (lower.includes("جوایز")) return "🎁";
+      if (lower.includes("شگفت")) return "🔥";
+      if (lower.includes("پرفروش")) return "⭐";
+      if (lower.includes("اسنک") || lower.includes("روکو") || lower.includes("ویفر") || lower.includes("تخمه")) return "🍿";
+      if (lower.includes("تماس") || lower.includes("شماره")) return "📞";
+      if (lower.includes("محصولات")) return "🛍️";
+      return "✨";
+    }
+
+    function addAnimatedEmoji(text) {
+      const emoji = getEmojiForText(text);
+      return `<span class="animated-emoji animate__animated animate__bounce">${emoji}</span> ${text}`;
+    }
+
+    // === دسته‌بندی خودکار ===
+    function getCategory(name) {
+      if (name.includes("روکو")) return "روکو";
+      if (name.includes("ویفر") || (name.includes("فله") && !name.includes("تخمه"))) return "ویفر";
+      if (name.includes("تخمه")) return "تخمه";
+      if (name.includes("اسنک") || name.includes("فیلی") || name.includes("حلقه") || name.includes("خلالی") || 
+          name.includes("پفک") || name.includes("چرخی") || name.includes("دوره") || name.includes("پذیرایی") || 
+          name.includes("کلاسیک")) return "اسنک";
+      return "سایر";
+    }
+
+    // === داده‌های اولیه از فایل اکسل شما ===
+    const initialProducts = [
+      { name: "اسنک حلقه ای پنیری بزرگ", code: "1126", price: "48000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1126.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک حلقه ای پیاز جعفری خانواده", code: "1125", price: "70000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1125.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک دوره همی", code: "1124", price: "58000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1124.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک طلایی خانواده اشی مشی", code: "1103", price: "75000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1103.jpg", outOfStock: false, amazing: true, bestseller: true },
+      { name: "اسنک طلایی پذیرایی اشی مشی", code: "1104", price: "32000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1104.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک پفک هندی نمکی", code: "1141", price: "44000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1141.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک پفک هندی پنیری", code: "1140", price: "44000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1140.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک چرخی بزرگ", code: "1122", price: "46000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1122.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک چرخی خانواده", code: "1123", price: "67000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1123.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "اسنک کلاسیک بزرگ اشی مشی", code: "1101", price: "52000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1101.jpg", outOfStock: false, amazing: true, bestseller: true },
+      { name: "اسنک کلاسیک خانواده اشی مشی", code: "1102", price: "72000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1102.jpg", outOfStock: false, amazing: false, bestseller: true },
+      { name: "اسنک کلاسیک متوسط پفک اشی مشی", code: "1100", price: "45000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1100.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه فله ساده", code: "1143", price: "88000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1143.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه فله فلفلی", code: "1146", price: "92000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1146.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه فله لیمویی", code: "1145", price: "92000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1145.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه فله پنیری", code: "1144", price: "92000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1144.jpg", outOfStock: false, amazing: true, bestseller: true },
+      { name: "تخمه فله پیاز جعفری", code: "1147", price: "92000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1147.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه فله کپاپ", code: "1142", price: "95000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1142.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "تخمه کدوفله گوشتی", code: "1148", price: "98000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1148.jpg", outOfStock: false, amazing: true, bestseller: false },
+      { name: "حلقه ای پنیری خانواده اشی مشی", code: "1108", price: "69000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1108.jpg", outOfStock: false, amazing: true, bestseller: false },
+      { name: "خلالی کچاپ بزرگ اشی مشی", code: "1109", price: "55000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1109.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "روکو ماست موسیر", code: "1120", price: "28000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1120.jpg", outOfStock: false, amazing: false, bestseller: true },
+      { name: "روکو مکزیکی", code: "1118", price: "28000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1118.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "روکو پنیری", code: "1119", price: "28000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1119.jpg", outOfStock: false, amazing: true, bestseller: true },
+      { name: "روکو کچاپ ذرت کانیکال", code: "1117", price: "28000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1117.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "شهر سبز ویفر فله توت فرنگی", code: "1116", price: "38000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1116.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "شیرین گندمک", code: "1121", price: "35000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1121.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "غلات صبحانه مغز دار اشی مشی", code: "1110", price: "42000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1110.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "فله پسته", code: "1130", price: "85000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1130.jpg", outOfStock: false, amazing: true, bestseller: true },
+      { name: "فیلی پاپ بزرگ", code: "1105", price: "48000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1105.jpg", outOfStock: false, amazing: false, bestseller: true },
+      { name: "فیلی پاپ خانواده", code: "1106", price: "65000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1106.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "ویفر فله موز", code: "1129", price: "36000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1129.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "ویفر فله پرتغالی", code: "1132", price: "36000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1132.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "ویفر فله کاکائو", code: "1133", price: "36000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1133.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "پیاز جعفری بزرگ اشی مشی", code: "1107", price: "50000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1107.jpg", outOfStock: false, amazing: false, bestseller: false },
+      { name: "کلاسیک پذیرایی", code: "1138", price: "30000", img: "https://ashimashi.co.ir/wp-content/uploads/2023/08/1138.jpg", outOfStock: false, amazing: false, bestseller: false }
+    ];
+
+    // === بارگذاری داده‌ها ===
+    let siteSettings = JSON.parse(localStorage.getItem('siteSettings')) || {
+      companyName: "پخش استقلال",
+      ceoName: "شاهین عثمان وش",
+      phoneNumber: "09142961752",
+      phoneNumber2: "",
+      orderLink: "https://wa.me/989142961752",
+      contactLink: "",
+      theme: "blue",
+      storyImage: "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+    };
+    let products = JSON.parse(localStorage.getItem('products')) || initialProducts;
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // === اعمال تنظیمات ===
+    function applySettings() {
+      document.getElementById('site-title').textContent = siteSettings.companyName;
+      document.getElementById('header-title').textContent = siteSettings.companyName;
+      document.body.className = `theme-${siteSettings.theme}`;
+
+      // بنرها
+      document.getElementById('banner1').innerHTML = addAnimatedEmoji("نمایندگی رسمی اسنک‌های اشی مشی");
+      document.getElementById('banner2').innerHTML = addAnimatedEmoji("ارسال به کل آذربایجان غربی");
+      document.getElementById('banner3').innerHTML = addAnimatedEmoji("بالاترین کیفیت، مناسب‌ترین قیمت");
+
+      // عناوین
+      document.getElementById('amazing-title').innerHTML = addAnimatedEmoji("شگفت‌انگیزها");
+      document.getElementById('bestsellers-title').innerHTML = addAnimatedEmoji("پرفروش‌ها");
+      document.getElementById('all-products-title').innerHTML = addAnimatedEmoji("همه محصولات");
+
+      // فوتر
+      let socialHTML = '';
+      if (siteSettings.contactLink) {
+        socialHTML = `<a href="${siteSettings.contactLink}" target="_blank" class="text-white underline">${addAnimatedEmoji("ارتباط با ما")}</a>`;
+      }
+      document.getElementById('social-links').innerHTML = socialHTML;
+
+      // استوری
+      document.getElementById('motion-story').src = siteSettings.storyImage;
+    }
+
+    // === نمایش محصولات ===
+    function renderProducts(list = products) {
+      const allGrid = document.getElementById('product-grid');
+      const amazingGrid = document.getElementById('amazing-products');
+      const bestsellersGrid = document.getElementById('bestsellers');
+      const amazingSection = document.getElementById('amazing-section');
+      const bestsellersSection = document.getElementById('bestsellers-section');
+
+      allGrid.innerHTML = '';
+      amazingGrid.innerHTML = '';
+      bestsellersGrid.innerHTML = '';
+
+      let hasAmazing = false, hasBestsellers = false;
+
+      list.forEach(p => {
+        const card = createProductCard(p);
+        allGrid.appendChild(card);
+        if (p.amazing) {
+          amazingGrid.appendChild(createProductCard(p));
+          hasAmazing = true;
+        }
+        if (p.bestseller) {
+          bestsellersGrid.appendChild(createProductCard(p));
+          hasBestsellers = true;
+        }
+      });
+
+      amazingSection.classList.toggle('hidden', !hasAmazing);
+      bestsellersSection.classList.toggle('hidden', !hasBestsellers);
+
+      updateCartUI();
+    }
+
+    function createProductCard(p) {
+      const div = document.createElement('div');
+      div.className = 'product-card';
+
+      let badge = '';
+      if (p.outOfStock) {
+        badge = `<div class="out-of-stock-badge">اتمام موجودی</div>`;
+      } else if (p.amazing) {
+        badge = `<div class="amazing-badge">🔥 شگفت‌انگیز</div>`;
+      } else if (p.bestseller) {
+        badge = `<div class="bestseller-badge">⭐ پرفروش</div>`;
+      }
+
+      const btnText = p.outOfStock ? 'اتمام موجودی' : 'افزودن به سبد خرید';
+      const btnClass = p.outOfStock ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary hover:bg-opacity-90';
+
+      div.innerHTML = badge + `
+        <div class="h-36 bg-white flex items-center justify-center">
+          <img src="${p.img}" alt="${p.name}" class="max-h-full max-w-full object-contain p-2"
+               onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'text-xs text-center text-gray-500\'>عکس ناموجود</div>';">
+        </div>
+        <div class="p-2">
+          <h3 class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">${p.name}</h3>
+          <p class="text-xs text-gray-500">کد: ${p.code}</p>
+          <p class="text-lg font-bold text-red-600 mt-1">${parseInt(p.price).toLocaleString()} تومان</p>
+          <button ${p.outOfStock ? 'disabled' : `onclick="addToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})"`} class="mt-2 w-full text-white text-xs py-1.5 rounded ${btnClass}">
+            ${btnText}
+          </button>
+        </div>
+      `;
+      return div;
+    }
+
+    // === سبد خرید ===
+    function addToCart(product) {
+      if (product.outOfStock) return;
+      const existing = cart.find(item => item.code === product.code);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      saveCart();
+      updateCartUI();
+      openCart();
+    }
+
+    function updateCartUI() {
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('cart-count').textContent = count;
+
+      const itemsDiv = document.getElementById('cart-items');
+      if (!document.getElementById('cart-panel').classList.contains('open')) return;
+
+      if (cart.length === 0) {
+        itemsDiv.innerHTML = '<p class="text-center text-gray-500 py-6">سبد خرید شما خالی است.</p>';
+        document.getElementById('cart-total').textContent = '0 تومان';
+        return;
+      }
+
+      let html = '';
+      let total = 0;
+      cart.forEach(item => {
+        const itemTotal = parseInt(item.price) * item.quantity;
+        total += itemTotal;
+        html += `
+          <div class="flex items-center gap-3 mb-4 p-2 border rounded">
+            <img src="${item.img}" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium">${item.name}</h4>
+              <p class="text-xs text-gray-500">${parseInt(item.price).toLocaleString()} تومان</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="changeQuantity('${item.code}', -1)" class="w-6 h-6 rounded-full bg-gray-200">-</button>
+              <span>${item.quantity}</span>
+              <button onclick="changeQuantity('${item.code}', 1)" class="w-6 h-6 rounded-full bg-gray-200">+</button>
+            </div>
+          </div>
+        `;
+      });
+      itemsDiv.innerHTML = html;
+      document.getElementById('cart-total').textContent = total.toLocaleString() + ' تومان';
+    }
+
+    function changeQuantity(code, delta) {
+      const item = cart.find(i => i.code === code);
+      if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+          cart = cart.filter(i => i.code !== code);
+        }
+        saveCart();
+        updateCartUI();
+      }
+    }
+
+    function proceedToCheckout() {
+      if (cart.length === 0) return;
+      const url = siteSettings.orderLink;
+      window.open(url, '_blank');
+      cart = [];
+      saveCart();
+      updateCartUI();
+    }
+
+    function openCart() {
+      document.getElementById('cart-panel').classList.add('open');
+      document.getElementById('cart-overlay').classList.add('active');
+      updateCartUI();
+    }
+
+    function closeCart() {
+      document.getElementById('cart-panel').classList.remove('open');
+      document.getElementById('cart-overlay').classList.remove('active');
+    }
+
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+
+    // === اسکرول ===
+    window.addEventListener('scroll', () => {
+      const btn = document.getElementById('scroll-to-top');
+      if (window.scrollY > 300) {
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+      }
+    });
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // === فیلتر ===
+    function filterProducts() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const category = document.getElementById('category-filter').value;
+      const maxPrice = parseInt(document.getElementById('price-range').value) || 100000;
+
+      const filtered = products.filter(p =>
+        p.name.toLowerCase().includes(query) &&
+        (category === '' || getCategory(p.name) === category) &&
+        parseInt(p.price) <= maxPrice
+      );
+      renderProducts(filtered);
+      document.getElementById('max-price').textContent = maxPrice.toLocaleString();
+    }
+
+    // === پنل مدیریت ===
+    function openAdminPanel() {
+      const pass = prompt('رمز پنل مدیریت را وارد کنید:');
+      if (pass === (localStorage.getItem('adminPass') || 'admin123')) {
+        document.getElementById('admin-panel').style.display = 'block';
+        
+        document.getElementById('company-name').value = siteSettings.companyName;
+        document.getElementById('ceo-name').value = siteSettings.ceoName;
+        document.getElementById('phone-number').value = siteSettings.phoneNumber;
+        document.getElementById('phone-number2').value = siteSettings.phoneNumber2 || '';
+        document.getElementById('order-link').value = siteSettings.orderLink;
+        document.getElementById('contact-link').value = siteSettings.contactLink || '';
+        document.getElementById('theme-select').value = siteSettings.theme;
+        
+        // پیش‌نمایش استوری
+        if (siteSettings.storyImage) {
+          document.getElementById('story-preview').src = siteSettings.storyImage;
+          document.getElementById('story-preview').style.display = 'block';
+        }
+        
+        renderAdminPanel();
+      } else {
+        alert('رمز اشتباه است!');
+      }
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('admin-panel').style.display = 'none';
+    }
+
+    function previewTheme(theme) {
+      document.body.className = `theme-${theme}`;
+    }
+
+    function setTheme(theme) {
+      document.getElementById('theme-select').value = theme;
+      previewTheme(theme);
+      document.querySelectorAll('.theme-color').forEach(el => el.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function saveGeneralSettings() {
+      siteSettings = {
+        companyName: document.getElementById('company-name').value || "پخش استقلال",
+        ceoName: document.getElementById('ceo-name').value || "مدیر عامل",
+        phoneNumber: document.getElementById('phone-number').value || "09142961752",
+        phoneNumber2: document.getElementById('phone-number2').value || "",
+        orderLink: document.getElementById('order-link').value || "https://wa.me/989142961752",
+        contactLink: document.getElementById('contact-link').value || "",
+        theme: document.getElementById('theme-select').value,
+        storyImage: siteSettings.storyImage
+      };
+      localStorage.setItem('siteSettings', JSON.stringify(siteSettings));
+      applySettings();
+      alert('تنظیمات با موفقیت ذخیره شد.');
+    }
+
+    function uploadStoryImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          siteSettings.storyImage = e.target.result;
+          localStorage.setItem('siteSettings', JSON.stringify(siteSettings));
+          document.getElementById('motion-story').src = e.target.result;
+          document.getElementById('story-preview').src = e.target.result;
+          document.getElementById('story-preview').style.display = 'block';
+          alert("عکس استوری با موفقیت آپلود شد!");
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function renderAdminPanel() {
+      const container = document.getElementById('admin-products');
+      container.innerHTML = '';
+      products.forEach((p, index) => {
+        const div = document.createElement('div');
+        div.className = 'p-3 border rounded bg-white flex flex-wrap gap-2 items-start';
+        div.innerHTML = `
+          <input type="text" value="${p.name}" onchange="updateField(${index}, 'name', this.value)" class="border p-1 w-full text-sm" placeholder="نام محصول">
+          <div class="flex gap-2 w-full">
+            <input type="text" value="${p.code}" onchange="updateField(${index}, 'code', this.value)" class="border p-1 w-20 text-sm" placeholder="کد">
+            <input type="number" value="${p.price}" onchange="updateField(${index}, 'price', this.value)" class="border p-1 w-24 text-sm" placeholder="قیمت">
+            <div class="flex-1 flex gap-1">
+              <input type="file" accept="image/*" onchange="uploadImage(event, ${index})" class="text-xs">
+            </div>
+          </div>
+          <div class="flex gap-2 mt-1">
+            <label><input type="checkbox" ${p.outOfStock ? 'checked' : ''} onchange="toggleStock(${index}, this.checked)"> اتمام موجودی</label>
+            <label><input type="checkbox" ${p.amazing ? 'checked' : ''} onchange="toggleAmazing(${index}, this.checked)"> شگفت‌انگیز</label>
+            <label><input type="checkbox" ${p.bestseller ? 'checked' : ''} onchange="toggleBestseller(${index}, this.checked)"> پرفروش</label>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function uploadImage(event, index) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          products[index].img = e.target.result;
+          saveProducts();
+          const allCards = document.querySelectorAll('.product-card');
+          if (allCards[index]) {
+            const imgEl = allCards[index].querySelector('img');
+            if (imgEl) {
+              imgEl.src = e.target.result;
+              imgEl.style.display = 'block';
+              const placeholder = imgEl.parentElement.querySelector('.text-gray-500');
+              if (placeholder) placeholder.remove();
+            }
+          }
+          alert("عکس با موفقیت آپلود شد!");
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function addNewProduct() {
+      products.push({ 
+        name: "محصول جدید", 
+        code: "0000", 
+        price: "0", 
+        img: "https://via.placeholder.com/150?text=عکس+محصول", 
+        outOfStock: false,
+        amazing: false,
+        bestseller: false
+      });
+      saveProducts();
+    }
+
+    function updateField(index, field, value) {
+      if (value.trim() !== '') {
+        products[index][field] = value.trim();
+        saveProducts();
+      }
+    }
+
+    function toggleStock(index, checked) {
+      products[index].outOfStock = checked;
+      saveProducts();
+    }
+
+    function toggleAmazing(index, checked) {
+      products[index].amazing = checked;
+      saveProducts();
+    }
+
+    function toggleBestseller(index, checked) {
+      products[index].bestseller = checked;
+      saveProducts();
+    }
+
+    function saveProducts() {
+      localStorage.setItem('products', JSON.stringify(products));
+      renderProducts();
+      renderAdminPanel();
+    }
+
+    // === شروع ===
+    applySettings();
+    renderProducts();
+  </script>
+</body>
+</html>
